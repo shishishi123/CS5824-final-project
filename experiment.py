@@ -5,7 +5,7 @@ from torch.autograd import Variable
 import torchvision
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from model import ResNetCifar10
+from minist_model import ResNetCifar10
 
 model_state_path="./acchybrid.checkpoint.pth.tar"
 def save_checkpoint(state, filename=model_state_path):
@@ -63,7 +63,6 @@ def train(epoch, scenario, optimizer, trainloader,net,weight_decay,
     train_loss = 0
     processed = 0
 
-    print(trainloader.shape)
     for data in trainloader:
         processed += int(data[1].size()[0])
         optimizer.zero_grad()  # zero the parameter gradients
@@ -78,7 +77,7 @@ def train(epoch, scenario, optimizer, trainloader,net,weight_decay,
         for loop in range(acc_loops):
             inputs = data[0][loop * acceptable_batch_size: (loop + 1) * acceptable_batch_size]  # get partial images
             labels = data[1][loop * acceptable_batch_size: (loop + 1) * acceptable_batch_size]  # get partial labels
-            inputs, labels = Variable(inputs), Variable(labels)  # wrap them in Variable
+            inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()  # wrap them in Variable
             outputs = net.forward(inputs)  # forward + backward + optimize
             loss = criterion(outputs, labels)
             loss.backward(retain_graph=(loop == acc_loops - 1))
@@ -121,7 +120,7 @@ def test(epoch, testloader,net,criterion,history,classes):
 
     for data in testloader:
         images, labels = data
-        images, labels = Variable(images), Variable(labels)
+        images, labels = Variable(images).cuda(), Variable(labels).cuda()
         outputs = net(images)
         loss = criterion(outputs, labels)
 
@@ -148,6 +147,7 @@ def test(epoch, testloader,net,criterion,history,classes):
 
 def main():
     net = ResNetCifar10()
+    net.cuda()
     N = 50000
     batch_size = 1024
     weight_decay = 0.0005
